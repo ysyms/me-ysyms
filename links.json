@@ -93,6 +93,14 @@
         "zh": "接收短信验证码,用于国内手机号无法使用的软件或注册多号"
       },
       "tags": ["crypto", "tool"]
+    },
+    {
+      "url": "https://www.v2ray-agent.com/archives/1682491479771",
+      "description": {
+        "en": "Xray/sing-box one-click installation script",
+        "zh": "Xray/sing-box 一键安装脚本 很简单的,卡住就问GPT"
+      },
+      "tags": ["vpn", "tool"]
     }
   ]
 }
