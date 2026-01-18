@@ -25,18 +25,42 @@
     {
       "url": "https://icpgraph.com",
       "description": {
-        "en": "An on-chain address relationship visualization tool for Internet Computer.",
-        "zh": "用于可视化 Internet Computer 链上地址关系的图谱工具。"
+        "en": "CALY AI --vibecoing",
+        "zh": "CALY AI --vibecoing"
       },
-      "tags": ["blockchain", "analysis", "tool"]
+      "tags": ["AI","tool"]
     },
     {
-      "url": "https://me.ysyms.host",
+      "url": "https://www.xo2.com/",
       "description": {
-        "en": "Sharing what matters",
-        "zh": "分享我用到的网站"
+        "en": "Twitter analytics and tracking",
+        "zh": "推特分析与追踪"
       },
-      "tags": ["personal", "docs"]
+      "tags": ["analyze", "tool"]
+    },
+    {
+      "url": "https://ethereum-magicians.org/",
+      "description": {
+        "en": "ETH forum",
+        "zh": "ETH 论坛"
+      },
+      "tags": ["forum", "crypto"]
+    },
+    {
+      "url": "https://annas-archive.org/",
+      "description": {
+        "en": "Free e-books",
+        "zh": "免费电子书"
+      },
+      "tags": ["free", "ebook"]
+    },
+    {
+      "url": "https://uiverse.io/",
+      "description": {
+        "en": "Open-Source UI",
+        "zh": "开源UI库"
+      },
+      "tags": ["Developer", "tool"]
     }
   ]
 }
