@@ -1,0 +1,42 @@
+﻿{
+  "meta": {
+    "updated": "2026-01-19",
+    "author": "ysyms"
+  },
+  "languages": {
+    "en": {
+      "label": "English",
+      "siteTitle": "Sharing what matters",
+      "siteSubtitle": "Curated utilities, projects, and docs I rely on every day.",
+      "authorLabel": "Author",
+      "updatedLabel": "Updated",
+      "languageLabel": "Language"
+    },
+    "zh": {
+      "label": "中文",
+      "siteTitle": "YSYMS",
+      "siteSubtitle": "精选我亲自使用的工具、项目与文档。",
+      "authorLabel": "作者",
+      "updatedLabel": "更新于",
+      "languageLabel": "语言"
+    }
+  },
+  "links": [
+    {
+      "url": "https://icpgraph.com",
+      "description": {
+        "en": "An on-chain address relationship visualization tool for Internet Computer.",
+        "zh": "用于可视化 Internet Computer 链上地址关系的图谱工具。"
+      },
+      "tags": ["blockchain", "analysis", "tool"]
+    },
+    {
+      "url": "https://me.ysyms.host",
+      "description": {
+        "en": "Sharing what matters",
+        "zh": "分享我用到的网站"
+      },
+      "tags": ["personal", "docs"]
+    }
+  ]
+}
