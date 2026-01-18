@@ -6,7 +6,7 @@
   "languages": {
     "en": {
       "label": "English",
-      "siteTitle": "YSYMS",
+      "siteTitle": "ME.YSYMS",
       "siteSubtitle": "Curated utilities, projects, and docs I rely on every day.",
       "authorLabel": "Author",
       "updatedLabel": "Updated",
@@ -23,12 +23,12 @@
   },
   "links": [
     {
-      "url": "https://icpgraph.com",
+      "url": "https://roxybrowser.com?code=0118JAXA",
       "description": {
-        "en": "CALY AI --vibecoing",
-        "zh": "CALY AI --vibecoing"
+        "en": "Antidetect Browser --vibecoing",
+        "zh": "指纹浏览器 ----用于多开 代理IP 窗口代理等"
       },
-      "tags": ["AI","tool"]
+      "tags": ["crypto","tool","Browser"]
     },
     {
       "url": "https://www.xo2.com/",
@@ -61,6 +61,38 @@
         "zh": "开源UI库"
       },
       "tags": ["Developer", "tool"]
+    },
+    {
+      "url": "https://github.com/ThanhNguyxn/SheerID-Verification-Tool",
+      "description": {
+        "en": "SheerID Verification Tool",
+        "zh": "过各种学生教师验证"
+      },
+      "tags": ["free", "tool"]
+    },
+    {
+      "url": "https://tops.chainbase.com/",
+      "description": {
+        "en": "AI analyzes crypto trends.",
+        "zh": "AI分析加密货币趋势。"
+      },
+      "tags": ["crypto", "tool"]
+    },
+    {
+      "url": "https://digvps.com/review",
+      "description": {
+        "en": "VPS analyzes ",
+        "zh": "提供各种vps提供商的速率 延迟 ip质量等信息 "
+      },
+      "tags": ["crypto", "tool"]
+    },
+    {
+      "url": "https://hero-sms.com/",
+      "description": {
+        "en": "Receive SMS online to virtual numbers",
+        "zh": "接收短信验证码,用于国内手机号无法使用的软件或注册多号"
+      },
+      "tags": ["crypto", "tool"]
     }
   ]
 }
