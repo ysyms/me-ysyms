@@ -90,7 +90,7 @@
       "url": "https://hero-sms.com/",
       "description": {
         "en": "Receive SMS online to virtual numbers",
-        "zh": "接收短信验证码,用于国内手机号无法使用的软件或注册多号"
+        "zh": "接收短信验证码,用于国内手机号无法注册的GPT Claude等"
       },
       "tags": ["crypto", "tool"]
     },
@@ -101,6 +101,14 @@
         "zh": "Xray/sing-box 一键安装脚本 很简单的,卡住就问GPT"
       },
       "tags": ["vpn", "tool"]
+    },
+    {
+      "url": "https://shitking.ysyms.host/",
+      "description": {
+        "en": "Find cryptocurrencies with even more bullish prospects than BTC.",
+        "zh": "找到一段时间内比BTC涨的多的币"
+      },
+      "tags": ["crypto", "tool"]
     }
   ]
 }
