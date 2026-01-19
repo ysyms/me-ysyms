@@ -47,7 +47,7 @@
       "tags": ["forum", "crypto"]
     },
     {
-      "url": "https://annas-archive.org/",
+      "url": "https://annas-archive.li/",
       "description": {
         "en": "Free e-books",
         "zh": "免费电子书"
@@ -58,7 +58,7 @@
       "url": "https://uiverse.io/",
       "description": {
         "en": "Open-Source UI",
-        "zh": "开源UI库"
+        "zh": "开源UI"
       },
       "tags": ["Developer", "tool"]
     },
@@ -82,7 +82,7 @@
       "url": "https://digvps.com/review",
       "description": {
         "en": "VPS analyzes ",
-        "zh": "提供各种vps提供商的速率 延迟 ip质量等信息 "
+        "zh": "提供数百个vps提供商的速率 延迟 ip质量等信息 "
       },
       "tags": ["crypto", "tool"]
     },
@@ -92,7 +92,7 @@
         "en": "Receive SMS online to virtual numbers",
         "zh": "接收短信验证码,用于国内手机号无法注册的GPT Claude等"
       },
-      "tags": ["crypto", "tool"]
+      "tags": ["sms", "tool"]
     },
     {
       "url": "https://www.v2ray-agent.com/archives/1682491479771",
@@ -105,10 +105,24 @@
     {
       "url": "https://shitking.ysyms.host/",
       "description": {
-        "en": "Find cryptocurrencies with even more bullish prospects than BTC.",
-        "zh": "找到一段时间内比BTC涨的多的币"
+        "en": "Find shitking.",
+        "zh": "加密货币趋势分析"
       },
       "tags": ["crypto", "tool"]
+    },{
+      "url": "https://skillsmp.com/",
+      "description": {
+        "en": "Agent Skills Marketplace",
+        "zh": "收录了很多Skills"
+      },
+      "tags": ["AI", "tool"]
+    },{
+      "url": "https://s3xy.top",
+      "description": {
+        "en": "tesla car games",
+        "zh": "特斯拉车载娱乐"
+      },
+      "tags": ["tesla", "tool"]
     }
   ]
 }
