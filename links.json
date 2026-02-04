@@ -123,6 +123,13 @@
         "zh": "特斯拉车载娱乐"
       },
       "tags": ["tesla", "tool"]
+    },{
+      "url": "https://steamunlocked.org/",
+      "description": {
+        "en": "Free PC games",
+        "zh": "免费PC游戏"
+      },
+      "tags": ["free", "game"]
     }
   ]
 }
