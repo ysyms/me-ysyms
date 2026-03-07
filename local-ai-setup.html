@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="icon" href="logo.png" type="image/png">
+    <title>本地 AI 搭建教程 | YSYMS</title>
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-light: #60a5fa;
+            --bg-body: #f1f4f9;
+            --card-bg: #ffffff;
+            --text-main: #475569;
+            --text-muted: #94a3b8;
+            --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --radius-card: 22px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0;
+            padding: 2rem;
+            font-family: Inter, system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-body);
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+            min-height: 100vh;
+            color: var(--text-main);
+        }
+
+        .app-container { width: 100%; max-width: 860px; margin: 0 auto; }
+
+        .site-header {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            margin-bottom: 2.5rem;
+            padding: 0 0.5rem;
+        }
+
+        .x-logo-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            flex-shrink: 0;
+            background-color: var(--card-bg);
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            box-shadow: var(--shadow-soft);
+            color: #1e293b;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .x-logo-link:hover {
+            transform: scale(1.1) rotate(10deg);
+            color: var(--primary-color);
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
+        }
+
+        .site-title {
+            font-size: 1.9rem;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            text-decoration: none;
+            margin-bottom: 2rem;
+            padding: 0.5rem 1rem;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.2s ease;
+        }
+
+        .back-link:hover {
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.2);
+            transform: translateX(-2px);
+        }
+
+        .hero-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-card);
+            padding: 2.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .hero-card h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin: 0 0 0.75rem;
+            letter-spacing: -0.02em;
+        }
+
+        .hero-card p {
+            margin: 0;
+            line-height: 1.7;
+            color: var(--text-main);
+        }
+
+        .tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1.2rem;
+        }
+
+        .tag {
+            background: #eff6ff;
+            color: var(--primary-color);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.35rem 0.85rem;
+            border-radius: 10px;
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .spec-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.4rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            text-align: center;
+        }
+
+        .spec-card .spec-icon {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .spec-card .spec-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .spec-card .spec-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-top: 0.25rem;
+        }
+
+        .step-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-card);
+            padding: 2rem;
+            margin-bottom: 1.2rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            animation: nodeFadeIn 0.5s ease-out forwards;
+            opacity: 0;
+        }
+
+        .step-card:nth-child(1) { animation-delay: 0.05s; }
+        .step-card:nth-child(2) { animation-delay: 0.10s; }
+        .step-card:nth-child(3) { animation-delay: 0.15s; }
+        .step-card:nth-child(4) { animation-delay: 0.20s; }
+        .step-card:nth-child(5) { animation-delay: 0.25s; }
+
+        @keyframes nodeFadeIn {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--primary-color);
+            color: #fff;
+            font-weight: 800;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .step-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .step-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-top: 0.1rem;
+        }
+
+        .step-body p {
+            line-height: 1.75;
+            margin: 0 0 1rem;
+        }
+
+        .step-body p:last-child { margin-bottom: 0; }
+
+        pre {
+            background: #0f172a;
+            color: #e2e8f0;
+            border-radius: 14px;
+            padding: 1.2rem 1.4rem;
+            overflow-x: auto;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            margin: 1rem 0;
+            position: relative;
+        }
+
+        pre code { font-family: ui-monospace, 'Cascadia Code', monospace; }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.3rem 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+        .inline-code {
+            background: #eff6ff;
+            color: var(--primary-color);
+            font-family: ui-monospace, monospace;
+            font-size: 0.85em;
+            padding: 0.15em 0.5em;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .tip-box {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 14px;
+            padding: 1rem 1.2rem;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.65;
+            color: #92400e;
+        }
+
+        .tip-box strong { color: #78350f; }
+
+        .model-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.875rem;
+        }
+
+        .model-table th {
+            text-align: left;
+            padding: 0.6rem 0.8rem;
+            background: #f8fafc;
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .model-table td {
+            padding: 0.75rem 0.8rem;
+            border-top: 1px solid #f1f5f9;
+            color: #334155;
+        }
+
+        .model-table tr:hover td { background: #f8fafc; }
+
+        .stars { color: var(--primary-color); }
+
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin: 2rem 0 1rem;
+            padding: 0 0.5rem;
+        }
+
+        @media (max-width: 640px) {
+            body { padding: 1rem; }
+            .hero-card { padding: 1.6rem; }
+            .step-card { padding: 1.4rem; }
+            .spec-grid { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+            .spec-card { padding: 1rem; }
+            .hero-card h1 { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="site-header">
+            <a href="https://x.com/AI_ccp251th" target="_blank" class="x-logo-link">
+                <svg width="30" height="30" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+                </svg>
+            </a>
+            <h1 class="site-title">YSYMS</h1>
+        </header>
+
+        <a href="/" class="back-link">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 12H5M12 5l-7 7 7 7"></path>
+            </svg>
+            返回主页
+        </a>
+
+        <div class="hero-card">
+            <h1>本地 AI 全套搭建教程</h1>
+            <p>用 Ollama + SillyTavern 在 Windows 上跑本地无限制大模型，完整流程从零开始，跑通需要 20 分钟。</p>
+            <div class="tag-row">
+                <span class="tag">#AI</span>
+                <span class="tag">#Ollama</span>
+                <span class="tag">#SillyTavern</span>
+                <span class="tag">#Windows</span>
+                <span class="tag">#本地部署</span>
+            </div>
+        </div>
+
+        <div class="spec-grid">
+            <div class="spec-card">
+                <div class="spec-icon">🖥️</div>
+                <div class="spec-label">显卡</div>
+                <div class="spec-value">4080S 16GB</div>
+            </div>
+            <div class="spec-card">
+                <div class="spec-icon">🧠</div>
+                <div class="spec-label">内存</div>
+                <div class="spec-value">48GB RAM</div>
+            </div>
+            <div class="spec-card">
+                <div class="spec-icon">💿</div>
+                <div class="spec-label">系统</div>
+                <div class="spec-value">Windows 11</div>
+            </div>
+        </div>
+
+        <div class="section-label">安装步骤</div>
+
+        <div class="steps-container">
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div>
+                        <div class="step-title">安装 Ollama</div>
+                        <div class="step-subtitle">本地模型运行引擎</div>
+                    </div>
+                </div>
+                <div class="step-body">
+                    <p>前往 <a href="https://ollama.com/download/windows" target="_blank" style="color: var(--primary-color); font-weight: 600;">ollama.com/download/windows</a> 下载安装包，一路 Next 安装完成。</p>
+                    <p>安装完成后打开命令提示符（<span class="inline-code">Win+R</span> → 输入 <span class="inline-code">cmd</span>）验证：</p>
+                    <div style="position:relative">
+                        <pre><code>ollama --version</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">复制</button>
+                    </div>
+                    <p>看到版本号说明安装成功，Ollama 默认在后台运行，监听 <span class="inline-code">11434</span> 端口。</p>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div>
+                        <div class="step-title">下载模型</div>
+                        <div class="step-subtitle">abliterated 无限制版本</div>
+                    </div>
+                </div>
+                <div class="step-body">
+                    <p>在命令提示符中执行以下命令下载模型（约 17GB，建议挂代理）：</p>
+                    <div style="position:relative">
+                        <pre><code>ollama pull huihui-ai/qwen2.5-abliterate:30b-a3b-q4_k_m</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">复制</button>
+                    </div>
+                    <p>下载完成后测试一下是否能正常对话：</p>
+                    <div style="position:relative">
+                        <pre><code>ollama run huihui-ai/qwen2.5-abliterate:30b-a3b-q4_k_m</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">复制</button>
+                    </div>
+                    <div class="tip-box">
+                        <strong>显存说明：</strong>30B Q4 模型约 17GB，略超 16GB 显存，Ollama 会自动将少量 layer offload 到内存，性能影响极小。
+                    </div>
+                    <p>其他可选模型对比：</p>
+                    <table class="model-table">
+                        <thead>
+                            <tr>
+                                <th>模型</th>
+                                <th>大小</th>
+                                <th>显存占用</th>
+                                <th>推荐</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Qwen2.5-30B-A3B abliterated Q4</td>
+                                <td>~17GB</td>
+                                <td>16GB + 少量 offload</td>
+                                <td><span class="stars">★★★★★</span></td>
+                            </tr>
+                            <tr>
+                                <td>Llama3.1-8B abliterated Q8</td>
+                                <td>~8.5GB</td>
+                                <td>全显存</td>
+                                <td><span class="stars">★★★★</span></td>
+                            </tr>
+                            <tr>
+                                <td>Qwen2.5-72B abliterated Q4</td>
+                                <td>~40GB</td>
+                                <td>大量 offload</td>
+                                <td><span class="stars">★★★</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <div>
+                        <div class="step-title">安装 Node.js</div>
+                        <div class="step-subtitle">SillyTavern 的运行环境</div>
+                    </div>
+                </div>
+                <div class="step-body">
+                    <p>前往 <a href="https://nodejs.org" target="_blank" style="color: var(--primary-color); font-weight: 600;">nodejs.org</a> 下载 LTS 版本安装，全程默认选项即可。</p>
+                    <p>安装后在命令提示符验证：</p>
+                    <div style="position:relative">
+                        <pre><code>node --version</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">复制</button>
+                    </div>
+                    <p>还需要安装 Git（如果没有）：</p>
+                    <div style="position:relative">
+                        <pre><code>winget install Git.Git</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">复制</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-number">4</div>
+                    <div>
+                        <div class="step-title">安装 SillyTavern</div>
+                        <div class="step-subtitle">AI 对话前端，支持角色扮演</div>
+                    </div>
+                </div>
+                <div class="step-body">
+                    <p>在命令提示符中克隆仓库并启动：</p>
+                    <div style="position:relative">
+                        <pre><code>git clone https://github.com/SillyTavern/SillyTavern
+cd SillyTavern
+Start.bat</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">复制</button>
+                    </div>
+                    <p>首次运行会自动安装依赖，完成后浏览器自动打开 <span class="inline-code">http://localhost:8000</span>。</p>
+                    <div class="tip-box">
+                        <strong>提示：</strong>以后每次启动只需双击 SillyTavern 文件夹里的 <span class="inline-code">Start.bat</span>，不需要重复执行上面的步骤。
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-number">5</div>
+                    <div>
+                        <div class="step-title">连接 Ollama</div>
+                        <div class="step-subtitle">完成最后配置</div>
+                    </div>
+                </div>
+                <div class="step-body">
+                    <p>在 SillyTavern 界面中：</p>
+                    <p>点击右上角 <strong>插头图标</strong>（API 连接） → API 类型选 <strong>Ollama</strong> → 服务器地址填：</p>
+                    <div style="position:relative">
+                        <pre><code>http://127.0.0.1:11434</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">复制</button>
+                    </div>
+                    <p>点击 <strong>连接</strong>，成功后从下拉菜单选择刚才下载的模型，开始对话。</p>
+                    <div class="tip-box">
+                        <strong>连不上？</strong>确认 Ollama 在后台运行（系统托盘里有图标），或重新执行 <span class="inline-code">ollama serve</span> 启动服务。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyCode(btn) {
+            const pre = btn.previousElementSibling || btn.parentElement.querySelector('pre');
+            const code = btn.closest('div').querySelector('pre code') || btn.closest('div').querySelector('pre');
+            navigator.clipboard.writeText(code.innerText).then(() => {
+                btn.textContent = '已复制';
+                setTimeout(() => btn.textContent = '复制', 1500);
+            });
+        }
+    </script>
+</body>
+</html>
