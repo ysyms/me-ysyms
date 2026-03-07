@@ -1,6 +1,6 @@
-﻿{
+{
   "meta": {
-    "updated": "2026-01-19",
+    "updated": "2026-03-08",
     "author": "ysyms"
   },
   "languages": {
@@ -22,6 +22,14 @@
     }
   },
   "links": [
+    {
+      "url": "https://me.ysyms.host/local-ai-setup.html",
+      "description": {
+        "en": "Local AI setup: Ollama + SillyTavern on Windows",
+        "zh": "本地 AI 搭建教程：Ollama + SillyTavern 完整流程"
+      },
+      "tags": ["AI", "tutorial"]
+    },
     {
       "url": "https://roxybrowser.com?code=0118JAXA",
       "description": {
@@ -109,21 +117,24 @@
         "zh": "加密货币趋势分析"
       },
       "tags": ["crypto", "tool"]
-    },{
+    },
+    {
       "url": "https://skillsmp.com/",
       "description": {
         "en": "Agent Skills Marketplace",
         "zh": "收录了很多Skills"
       },
       "tags": ["AI", "tool"]
-    },{
+    },
+    {
       "url": "https://s3xy.top",
       "description": {
         "en": "tesla car games",
         "zh": "特斯拉车载娱乐"
       },
       "tags": ["tesla", "tool"]
-    },{
+    },
+    {
       "url": "https://steamunlocked.org/",
       "description": {
         "en": "Free PC games",
