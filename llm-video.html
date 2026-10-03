@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="icon" href="logo.png" type="image/png">
+<title>LLM 原理动画讲解 | YSYMS</title>
+<meta name="description" content="用一段纯 HTML/CSS/JS 动画，三分钟讲清大语言模型（LLM）的工作原理：分词、词嵌入、注意力、Transformer、采样、自回归生成与训练。">
+<style>
+    :root {
+        --bg: #070b16;
+        --panel: #0f1629;
+        --ink: #e6ecff;
+        --muted: #8a96b8;
+        --blue: #3b82f6;
+        --blue2: #60a5fa;
+        --violet: #a78bfa;
+        --pink: #f472b6;
+        --green: #34d399;
+        --amber: #fbbf24;
+        --red: #f87171;
+        --line: rgba(148, 163, 255, 0.18);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body { margin: 0; min-height: 100%; }
+
+    body {
+        background: #03050b;
+        color: var(--ink);
+        font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        padding: 16px;
+        padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    }
+
+    .wrap { width: 100%; max-width: 1100px; margin: 0 auto; }
+
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .top h1 { font-size: 1.15rem; margin: 0; font-weight: 800; letter-spacing: -0.01em; }
+    .top a { color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+    .top a:hover { color: var(--blue2); }
+
+    /* ---------- player ---------- */
+    .player { position: relative; width: 100%; background: #000; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06); user-select: none; -webkit-user-select: none; }
+    .viewport { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: var(--bg); cursor: pointer; }
+    .player:fullscreen { display: flex; flex-direction: column; border-radius: 0; max-width: none; }
+    .player:fullscreen .viewport { flex: 1; aspect-ratio: auto; }
+
+    .stage { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform-origin: 0 0; overflow: hidden;
+        background: radial-gradient(ellipse at 50% 0%, #121c3a 0%, var(--bg) 60%); }
+    .stage::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+        background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+        background-size: 64px 64px; opacity: 0.18; mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%); }
+
+    .overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: rgba(3, 5, 11, 0.55); backdrop-filter: blur(2px); transition: opacity 0.3s; z-index: 5; }
+    .overlay.hidden { opacity: 0; pointer-events: none; }
+    .bigplay { width: 84px; height: 84px; border-radius: 50%; border: none; background: linear-gradient(135deg, var(--blue), #7c3aed); color: #fff; display: grid; place-items: center; cursor: pointer; box-shadow: 0 10px 40px rgba(59, 130, 246, 0.5); transition: transform 0.25s; }
+    .bigplay:hover { transform: scale(1.08); }
+    .overlay .hint { color: #c7d2fe; font-size: 0.9rem; text-align: center; padding: 0 16px; }
+
+    .controls { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #0b0f1c; border-top: 1px solid rgba(255, 255, 255, 0.06); }
+    .cbtn { flex-shrink: 0; height: 32px; min-width: 32px; padding: 0 8px; border: none; border-radius: 8px; background: transparent; color: #cbd5e1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font: 600 12px/1 inherit; font-family: inherit; }
+    .cbtn:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+    .cbtn.on { color: var(--blue2); }
+    .time { font: 500 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: #94a3b8; flex-shrink: 0; min-width: 84px; }
+
+    .bar { position: relative; flex: 1; height: 22px; cursor: pointer; touch-action: none; }
+    .bar-track { position: absolute; left: 0; right: 0; top: 9px; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.14); overflow: hidden; }
+    .bar-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(90deg, var(--blue), var(--violet)); }
+    .bar-tick { position: absolute; top: 7px; width: 2px; height: 8px; background: #0b0f1c; }
+    .bar-knob { position: absolute; top: 4px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.35); transform: scale(0); transition: transform 0.15s; }
+    .bar:hover .bar-knob, .bar.drag .bar-knob { transform: scale(1); }
+    .bar-tip { position: absolute; bottom: 26px; transform: translateX(-50%); white-space: nowrap; padding: 4px 8px; border-radius: 6px; background: #1e293b; color: #e2e8f0; font-size: 12px; opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+    .bar:hover .bar-tip { opacity: 1; }
+
+    .chapters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .chap { border: 1px solid rgba(255, 255, 255, 0.08); background: #0b1020; color: #94a3b8; border-radius: 999px; padding: 6px 12px; font: 600 12.5px/1.2 inherit; font-family: inherit; cursor: pointer; transition: all 0.2s; }
+    .chap b { color: #64748b; font-weight: 700; margin-right: 4px; font-family: ui-monospace, Menlo, monospace; }
+    .chap:hover { color: #e2e8f0; border-color: rgba(96, 165, 250, 0.4); }
+    .chap.active { color: #fff; background: rgba(59, 130, 246, 0.18); border-color: rgba(96, 165, 250, 0.6); }
+    .chap.active b { color: var(--blue2); }
+    .foot { margin-top: 14px; color: #64748b; font-size: 12px; line-height: 1.6; }
+    .foot kbd { font-family: ui-monospace, Menlo, monospace; background: #111827; border: 1px solid #1f2937; border-radius: 4px; padding: 0 4px; color: #94a3b8; }
+
+    @media (max-width: 560px) {
+        body { padding: 10px; }
+        .controls { gap: 4px; padding: 8px; }
+        .time { min-width: 0; font-size: 11px; }
+        .cbtn .lbl { display: none; }
+    }
+
+    /* ---------- stage content (1280×720 coordinate space) ---------- */
+    .scene { position: absolute; inset: 0; }
+    .abs { position: absolute; }
+    .center { text-align: center; }
+    .hd { position: absolute; left: 64px; top: 44px; display: flex; align-items: baseline; gap: 16px; }
+    .hd .n { font: 800 20px/1 ui-monospace, Menlo, monospace; color: var(--blue2); padding: 6px 10px; border-radius: 8px; background: rgba(96, 165, 250, 0.12); }
+    .hd .t { font-size: 34px; font-weight: 800; letter-spacing: -0.01em; }
+    .note { position: absolute; left: 0; right: 0; text-align: center; font-size: 26px; color: #c7d2fe; }
+    .hl { color: var(--amber); }
+    .panel { background: rgba(15, 22, 41, 0.85); border: 1.5px solid rgba(148, 163, 255, 0.22); border-radius: 18px; }
+    .lbl { font-size: 15px; color: var(--muted); letter-spacing: 0.08em; }
+    .sub { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); max-width: 1120px; width: max-content; padding: 9px 20px; border-radius: 10px; background: rgba(0, 0, 0, 0.66); color: #fff; font-size: 27px; line-height: 1.4; text-align: center; transition: opacity 0.25s; z-index: 4; }
+    .sub.off, .sub:empty { opacity: 0; }
+    .ovl { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+
+    .pt { position: absolute; left: 0; top: 0; color: #93c5fd; font-family: ui-monospace, Menlo, monospace; white-space: nowrap; }
+    .glow { position: absolute; border-radius: 50%; background: radial-gradient(circle, rgba(124, 58, 237, 0.35), rgba(59, 130, 246, 0.12) 45%, transparent 70%); filter: blur(20px); }
+    .kicker { display: inline-block; font-size: 18px; font-weight: 700; letter-spacing: 0.3em; color: var(--blue2); padding: 8px 16px; border: 1px solid rgba(96, 165, 250, 0.4); border-radius: 999px; }
+    .title { font-size: 80px; font-weight: 900; line-height: 1.12; letter-spacing: -0.02em; background: linear-gradient(135deg, #fff 20%, #a5b4fc 60%, #f0abfc); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .tagline { font-size: 28px; color: #c7d2fe; }
+
+    .arrow { position: absolute; height: 3px; background: linear-gradient(90deg, rgba(96, 165, 250, 0), var(--blue2)); }
+    .arrow::after { content: ""; position: absolute; right: -4px; top: -6px; border-left: 13px solid var(--blue2); border-top: 7.5px solid transparent; border-bottom: 7.5px solid transparent; }
+    .llm { display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 900; letter-spacing: 0.04em; border-radius: 22px; background: linear-gradient(135deg, #1e3a8a, #5b21b6); border: 1.5px solid rgba(167, 139, 250, 0.7); }
+    .big { font-size: 46px; font-weight: 700; margin-top: 14px; white-space: nowrap; }
+    .caret { display: inline-block; width: 3px; height: 44px; background: var(--blue2); vertical-align: -6px; margin-left: 4px; }
+
+    .barrow { display: flex; align-items: center; gap: 14px; height: 58px; transition: opacity 0.3s; }
+    .barrow .w { width: 84px; text-align: right; font-size: 30px; font-weight: 700; }
+    .barrow .track { position: relative; width: 250px; height: 26px; border-radius: 6px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
+    .barrow .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; background: linear-gradient(90deg, var(--blue), var(--violet)); }
+    .barrow .pct { font: 600 22px/1 ui-monospace, Menlo, monospace; color: #cbd5e1; width: 70px; }
+    .barrow.win .fill { background: linear-gradient(90deg, #f59e0b, var(--amber)); }
+    .barrow.win .w { color: var(--amber); }
+
+    .tokrow { display: flex; justify-content: center; align-items: flex-start; }
+    .tk { display: inline-flex; flex-direction: column; align-items: center; }
+    .tw { font-size: 52px; font-weight: 700; border: 2px solid transparent; border-radius: 12px; white-space: nowrap; }
+    .tid { margin-top: 12px; font: 600 22px/1 ui-monospace, Menlo, monospace; color: #94a3b8; }
+
+    .chip { display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; border-radius: 12px; font-size: 30px; font-weight: 700; background: rgba(96, 165, 250, 0.12); border: 2px solid rgba(96, 165, 250, 0.45); white-space: nowrap; }
+    .vec { font: 600 22px/1 ui-monospace, Menlo, monospace; }
+    .vrow { display: flex; align-items: center; gap: 10px; height: 34px; }
+    .vrow .num { width: 78px; text-align: right; color: #cbd5e1; }
+    .vrow .vb { height: 14px; border-radius: 4px; }
+
+    .card { position: absolute; padding: 20px 22px; border-radius: 18px; background: rgba(15, 22, 41, 0.9); border: 1.5px solid rgba(148, 163, 255, 0.25); }
+    .card h3 { margin: 0 0 8px; font-size: 26px; }
+    .card p { margin: 0; font-size: 20px; color: #a5b4d8; line-height: 1.5; }
+    .badge { display: inline-block; font: 800 16px/1 ui-monospace, Menlo, monospace; padding: 6px 10px; border-radius: 8px; margin-bottom: 12px; }
+
+    .layer { position: absolute; display: flex; gap: 10px; padding: 8px; border-radius: 14px; background: rgba(30, 41, 79, 0.65); border: 1.5px solid rgba(148, 163, 255, 0.3); }
+    .layer .ln { width: 74px; display: flex; align-items: center; font-size: 17px; color: var(--muted); font-weight: 700; }
+    .layer .sb { flex: 1; display: flex; align-items: center; justify-content: center; border-radius: 9px; font-size: 19px; font-weight: 700; }
+    .fact { display: flex; align-items: flex-start; gap: 14px; font-size: 25px; line-height: 1.45; margin-bottom: 22px; }
+    .fact i { flex-shrink: 0; width: 12px; height: 12px; border-radius: 50%; margin-top: 12px; }
+
+    .slider { position: absolute; height: 8px; border-radius: 8px; background: linear-gradient(90deg, #38bdf8, #a78bfa, #f43f5e); }
+    .knob { position: absolute; top: -10px; width: 28px; height: 28px; margin-left: -14px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.2); }
+
+    .gtok { display: inline-block; padding: 2px 4px; margin: 0 1px; border-radius: 6px; }
+    .gtok.new { background: rgba(251, 191, 36, 0.28); color: #fde68a; }
+    .eos { display: inline-block; font: 700 18px/1 ui-monospace, Menlo, monospace; color: #fca5a5; border: 1.5px solid #f87171; border-radius: 6px; padding: 5px 8px; margin-left: 8px; vertical-align: 4px; }
+    .flow { display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .flow .chip { font-size: 25px; padding: 12px 16px; }
+    .flow .ar { color: var(--blue2); font-size: 26px; font-weight: 900; }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div class="top">
+        <h1>三分钟看懂大语言模型（LLM）</h1>
+        <a href="/">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 12H5M12 5l-7 7 7 7"></path></svg>
+            返回首页
+        </a>
+    </div>
+
+    <div class="player" id="player">
+        <div class="viewport" id="viewport">
+            <div class="stage" id="stage">
+                <div class="sub" id="sub"></div>
+            </div>
+            <div class="overlay" id="overlay">
+                <button class="bigplay" id="bigplay" aria-label="播放">
+                    <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 8 5.5z"/></svg>
+                </button>
+                <div class="hint" id="hint">点击播放 · 可开启语音解说</div>
+            </div>
+        </div>
+        <div class="controls">
+            <button class="cbtn" id="playBtn" aria-label="播放/暂停"></button>
+            <span class="time" id="time">0:00 / 0:00</span>
+            <div class="bar" id="bar">
+                <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+                <div class="bar-knob" id="barKnob"></div>
+                <div class="bar-tip" id="barTip"></div>
+            </div>
+            <button class="cbtn" id="narrBtn" title="语音解说 (N)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>
+                <span class="lbl">解说</span>
+            </button>
+            <button class="cbtn on" id="ccBtn" title="字幕 (C)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M10 10.5a2 2 0 1 0 0 3M17 10.5a2 2 0 1 0 0 3" stroke-linecap="round"/></svg>
+                <span class="lbl">字幕</span>
+            </button>
+            <button class="cbtn" id="fsBtn" title="全屏 (F)" aria-label="全屏">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="chapters" id="chapters"></div>
+    <div class="foot">
+        纯 HTML + CSS + JavaScript 绘制，无视频文件。快捷键：<kbd>空格</kbd> 播放/暂停 · <kbd>←</kbd><kbd>→</kbd> 快退/快进 5 秒 · <kbd>N</kbd> 语音解说 · <kbd>C</kbd> 字幕 · <kbd>F</kbd> 全屏。<br>
+        语音解说使用浏览器自带的语音合成，效果取决于系统是否安装中文语音。图中数值均为示意，并非真实模型输出。
+    </div>
+</div>
+
+<script>
+(() => {
+    // ---------- helpers ----------
+    const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+    const ease = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+    const P = (t, a, b) => ease(clamp((t - a) / (b - a)));
+    const lerp = (a, b, k) => a + (b - a) * k;
+    const NS = 'http://www.w3.org/2000/svg';
+    const COL = ['#60a5fa', '#a78bfa', '#f472b6', '#34d399', '#fbbf24', '#22d3ee', '#fb923c'];
+
+    function el(parent, tag, cls, html, css) {
+        const e = document.createElement(tag);
+        if (cls) e.className = cls;
+        if (html != null) e.innerHTML = html;
+        if (css) e.style.cssText = css;
+        if (parent) parent.appendChild(e);
+        return e;
+    }
+    function sv(parent, tag, attrs) {
+        const e = document.createElementNS(NS, tag);
+        for (const k in attrs) e.setAttribute(k, attrs[k]);
+        if (parent) parent.appendChild(e);
+        return e;
+    }
+    function svgRoot(parent) {
+        const s = sv(parent, 'svg', { width: 1280, height: 720, viewBox: '0 0 1280 720', class: 'ovl' });
+        const defs = sv(s, 'defs', {});
+        [['ah', '#60a5fa'], ['ahp', '#f472b6'], ['ahg', '#34d399'], ['aha', '#fbbf24']].forEach(([id, c]) => {
+            const m = sv(defs, 'marker', { id, viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' });
+            sv(m, 'path', { d: 'M0 0L10 5L0 10z', fill: c });
+        });
+        return s;
+    }
+    function rgba(hex, a) {
+        const n = parseInt(hex.slice(1), 16);
+        return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`;
+    }
+    function show(e, k, dy = 20) {
+        e.style.opacity = k;
+        e.style.transform = k >= 1 ? '' : `translateY(${(1 - k) * dy}px)`;
+    }
+    function pop(e, k) {
+        e.style.opacity = clamp(k * 1.5);
+        e.style.transform = `scale(${lerp(0.6, 1, k)})`;
+    }
+    // draw an SVG path progressively; marker (arrow head) appears at the end
+    function draw(path, k, marker) {
+        path.style.strokeDashoffset = 1 - k;
+        path.style.opacity = k > 0.001 ? 1 : 0;
+        if (marker) {
+            if (k > 0.97) path.setAttribute('marker-end', `url(#${marker})`);
+            else path.removeAttribute('marker-end');
+        }
+    }
+    function line(svg, d, color, width, extra = {}) {
+        return sv(svg, 'path', Object.assign({ d, fill: 'none', stroke: color, 'stroke-width': width, 'stroke-linecap': 'round', pathLength: 1, 'stroke-dasharray': '1 1' }, extra));
+    }
+    function header(r, n, t) {
+        return el(r, 'div', 'hd', `<span class="n">${n}</span><span class="t">${t}</span>`);
+    }
+    function mulberry(a) {
+        return () => {
+            a |= 0; a = a + 0x6D2B79F5 | 0;
+            let t = Math.imul(a ^ a >>> 15, 1 | a);
+            t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
+    // centre of an element in stage coordinates (layout values, unaffected by the stage scale)
+    function centerOf(e, root) {
+        let x = e.offsetWidth / 2, y = e.offsetHeight / 2, n = e;
+        while (n && n !== root) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
+        return { x, y, w: e.offsetWidth, h: e.offsetHeight };
+    }
+
+    // ---------- scenes ----------
+    // Each scene: build(root) creates DOM once; update(state, t) sets everything from local time t,
+    // so the timeline can be scrubbed to any point deterministically.
+    const scenes = [
+        {
+            title: '开场',
+            dur: 10,
+            cues: [
+                [0.6, '你每天可能都在和 ChatGPT、Claude 这样的 AI 对话。'],
+                [5.2, '它们到底是怎么工作的？我们用三分钟讲清楚。'],
+            ],
+            build(r) {
+                const s = { parts: [] };
+                const rnd = mulberry(7);
+                const words = ['the', '猫', '学习', 'token', 'AI', '的', 'model', '你好', 'is', '##ing', '注意力', 'vector', '了', 'data', '神经', '<eos>', 'language', '预测', '概率', 'GPT', '我', 'world', '模型', '中', 'Q·K', 'softmax'];
+                s.glow = el(r, 'div', 'glow', '', 'left:290px;top:90px;width:700px;height:540px');
+                for (let i = 0; i < 40; i++) {
+                    const e = el(r, 'div', 'pt', words[i % words.length]);
+                    e.style.fontSize = (14 + rnd() * 22).toFixed(0) + 'px';
+                    s.parts.push({ e, x: rnd() * 1240, y: rnd() * 720, sp: 8 + rnd() * 22, ph: rnd() * 6.28, o: 0.12 + rnd() * 0.25 });
+                }
+                s.k = el(r, 'div', 'abs center', '<span class="kicker">AI 科普 · 动画讲解</span>', 'left:0;right:0;top:190px');
+                s.t = el(r, 'div', 'abs center title', '大语言模型<br>是怎么工作的？', 'left:0;right:0;top:260px');
+                s.st = el(r, 'div', 'abs center tagline', '从「预测下一个词」到 ChatGPT', 'left:0;right:0;top:475px');
+                return s;
+            },
+            update(s, t) {
+                s.parts.forEach(p => {
+                    const y = ((p.y - t * p.sp) % 760 + 760) % 760 - 20;
+                    const x = p.x + Math.sin(t * 0.5 + p.ph) * 18;
+                    p.e.style.transform = `translate(${x}px,${y}px)`;
+                    p.e.style.opacity = p.o * P(t, 0, 1.5);
+                });
+                s.glow.style.opacity = 0.6 + 0.25 * Math.sin(t * 1.4);
+                show(s.k, P(t, 0.3, 1.1));
+                show(s.t, P(t, 0.8, 1.9), 34);
+                show(s.st, P(t, 1.8, 2.8));
+            },
+        },
+        {
+            title: '预测下一个词',
+            dur: 18,
+            cues: [
+                [0.5, 'LLM 的核心任务出奇地简单：预测下一个词。'],
+                [4.2, '输入「今天天气真」，模型会给每个候选词打一个概率。'],
+                [9.2, '「好」的概率最高，于是它被选中，接到句子后面。'],
+                [13.4, '本质上，LLM 就是一台超级强大的「文字接龙」机器。'],
+            ],
+            build(r) {
+                const s = {};
+                s.hd = header(r, '01', '核心任务：预测下一个词');
+                s.inBox = el(r, 'div', 'panel abs', '<div class="lbl">输入</div><div class="big"><span class="typed"></span><span class="add hl"></span><span class="caret"></span></div>', 'left:60px;top:255px;width:390px;height:160px;padding:24px 28px');
+                s.typed = s.inBox.querySelector('.typed');
+                s.add = s.inBox.querySelector('.add');
+                s.caret = s.inBox.querySelector('.caret');
+                s.a1 = el(r, 'div', 'arrow', '', 'left:466px;top:334px;width:66px');
+                s.llm = el(r, 'div', 'llm abs', 'LLM', 'left:548px;top:275px;width:160px;height:120px');
+                s.a2 = el(r, 'div', 'arrow', '', 'left:724px;top:334px;width:56px');
+                s.bars = el(r, 'div', 'abs', '<div class="lbl" style="margin:0 0 8px 98px">下一个词的概率</div>', 'left:792px;top:170px');
+                s.rows = [['好', 0.62], ['不错', 0.21], ['热', 0.09], ['冷', 0.05], ['糟糕', 0.03]].map(([w, p]) => {
+                    const row = el(s.bars, 'div', 'barrow', `<span class="w">${w}</span><span class="track"><span class="fill"></span></span><span class="pct"></span>`);
+                    return { row, fill: row.querySelector('.fill'), pct: row.querySelector('.pct'), p };
+                });
+                s.note = el(r, 'div', 'note', 'LLM ≈ 一台超级强大的「<b class="hl">文字接龙</b>」机器', 'top:540px;font-size:32px');
+                return s;
+            },
+            update(s, t) {
+                show(s.hd, P(t, 0, 0.6));
+                show(s.inBox, P(t, 0.3, 1));
+                const txt = '今天天气真';
+                s.typed.textContent = txt.slice(0, Math.floor(clamp((t - 0.9) / 1.6) * txt.length + 1e-6));
+                s.add.textContent = t > 10.2 ? '好' : '';
+                s.add.style.opacity = P(t, 10.2, 10.8);
+                s.caret.style.opacity = Math.floor(t * 2.2) % 2 ? 0.2 : 1;
+                const k = P(t, 2.5, 3.3);
+                s.a1.style.opacity = k; s.a2.style.opacity = P(t, 3.4, 4);
+                pop(s.llm, k);
+                const g = t > 3.2 && t < 6 ? Math.sin((t - 3.2) * 6) * 0.5 + 0.5 : 0;
+                s.llm.style.boxShadow = `0 0 ${20 + g * 50}px rgba(139,92,246,${0.3 + g * 0.5})`;
+                s.bars.style.opacity = P(t, 3.8, 4.3);
+                s.rows.forEach((r, i) => {
+                    const kk = P(t, 4.2 + i * 0.3, 5.6 + i * 0.3);
+                    r.fill.style.width = (r.p * 100 * kk) + '%';
+                    r.pct.textContent = Math.round(r.p * 100 * kk) + '%';
+                    r.row.classList.toggle('win', i === 0 && t > 9.2);
+                    r.row.style.opacity = i > 0 && t > 9.2 ? 0.35 : 1;
+                });
+                show(s.note, P(t, 13.4, 14.2));
+            },
+        },
+        {
+            title: '分词 Token',
+            dur: 18,
+            cues: [
+                [0.5, '不过，模型并不直接读文字。第一步是「分词」。'],
+                [4, '句子被切成一个个小片段，叫做 Token。'],
+                [7, '每个 Token 都对应词表里的一个编号。'],
+                [10, '英文长词也会被拆开，比如 unbelievable 变成三块。'],
+                [14.2, '所以在模型眼里，一句话只是一串数字。'],
+            ],
+            build(r) {
+                const s = {};
+                s.hd = header(r, '02', '第一步：分词（Tokenization）');
+                const mk = (top, toks, ids, off) => {
+                    const row = el(r, 'div', 'abs tokrow', '', `left:0;right:0;top:${top}px`);
+                    const items = toks.map((w, i) => {
+                        const tk = el(row, 'div', 'tk', `<span class="tw">${w}</span><span class="tid">${ids[i]}</span>`);
+                        return { tw: tk.firstChild, tid: tk.lastChild, c: COL[(i + off) % COL.length] };
+                    });
+                    return { row, items };
+                };
+                s.r1 = mk(185, ['我', '喜欢', '学习', '人工', '智能'], [2769, 11431, 23038, 17340, 30910], 0);
+                s.r2 = mk(370, ['un', 'believ', 'able'], [403, 33796, 481], 2);
+                s.note = el(r, 'div', 'note', '模型看到的只是：<span class="hl" style="font-family:ui-monospace,Menlo,monospace">[2769, 11431, 23038, 17340, 30910]</span>', 'top:545px');
+                return s;
+            },
+            update(s, t) {
+                show(s.hd, P(t, 0, 0.6));
+                const apply = (r, appear, split, ids) => {
+                    show(r.row, P(t, appear, appear + 0.7));
+                    const k = P(t, split, split + 1.2);
+                    r.items.forEach((it, i) => {
+                        it.tw.style.padding = `8px ${lerp(0, 18, k)}px`;
+                        it.tw.style.margin = `0 ${lerp(0, 8, k)}px`;
+                        it.tw.style.background = rgba(it.c, 0.16 * k);
+                        it.tw.style.borderColor = rgba(it.c, 0.75 * k);
+                        it.tw.style.color = k > 0.5 ? it.c : '';
+                        show(it.tid, P(t, ids + i * 0.25, ids + 0.6 + i * 0.25), 10);
+                    });
+                };
+                apply(s.r1, 0.6, 4, 7);
+                apply(s.r2, 10, 11, 12.3);
+                show(s.note, P(t, 14.2, 15));
+            },
+        },
+        {
+            title: '词嵌入',
+            dur: 20,
+            cues: [
+                [0.5, '接着，每个 Token 编号会被转换成一个长长的向量，叫做「词嵌入」。'],
+                [5.8, '你可以把它想象成：每个词在高维空间里的坐标。'],
+                [9.6, '意思相近的词，坐标也相近：猫和狗挨在一起，汽车和火车挨在一起。'],
+                [14.6, '甚至方向也有意义：国王减去男人加上女人，约等于女王。'],
+            ],
+            build(r) {
+                const s = {};
+                s.hd = header(r, '03', '第二步：词嵌入（Embedding）');
+                s.tok = el(r, 'div', 'chip abs', '猫', 'left:150px;top:150px;font-size:40px;padding:10px 26px');
+                s.tid = el(r, 'div', 'abs vec', '#3417', 'left:270px;top:172px;color:#94a3b8');
+                s.vec = el(r, 'div', 'abs vec', '', 'left:90px;top:250px');
+                const vals = [0.21, -0.83, 0.47, 0.05, -0.36, 0.92, -0.14, 0.66];
+                s.vrows = vals.map(v => {
+                    const row = el(s.vec, 'div', 'vrow', `<span class="num">${v.toFixed(2)}</span><span class="vb"></span>`);
+                    return { row, b: row.lastChild, v };
+                });
+                s.dim = el(s.vec, 'div', '', '⋮ 共 4096 维', 'margin:6px 0 0 30px;color:#94a3b8;font-size:20px;font-family:inherit');
+
+                s.plot = el(r, 'div', 'panel abs', '', 'left:430px;top:122px;width:790px;height:490px;overflow:hidden');
+                const svg = sv(s.plot, 'svg', { width: 790, height: 490, viewBox: '0 0 790 490', style: 'position:absolute;left:0;top:0;overflow:visible' });
+                const defs = sv(svg, 'defs', {});
+                const m = sv(defs, 'marker', { id: 'ahe', viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto' });
+                sv(m, 'path', { d: 'M0 0L10 5L0 10z', fill: '#fbbf24' });
+                const clusters = [
+                    { c: '#34d399', name: '动物', cx: 160, cy: 130, rx: 125, ry: 85, pts: [['猫', 115, 105], ['狗', 205, 125], ['兔子', 140, 172]] },
+                    { c: '#60a5fa', name: '交通工具', cx: 615, cy: 120, rx: 140, ry: 85, pts: [['汽车', 560, 140], ['火车', 650, 165], ['飞机', 640, 75]] },
+                    { c: '#f472b6', name: '水果', cx: 410, cy: 215, rx: 95, ry: 65, pts: [['苹果', 380, 200], ['香蕉', 445, 240]] },
+                    { c: '#a78bfa', name: '', pts: [['男人', 210, 420], ['国王', 290, 300], ['女人', 470, 420], ['女王', 550, 300]] },
+                ];
+                s.hulls = []; s.pts = [];
+                clusters.forEach((cl, ci) => {
+                    if (cl.name) {
+                        const g = sv(svg, 'g', {});
+                        sv(g, 'ellipse', { cx: cl.cx, cy: cl.cy, rx: cl.rx, ry: cl.ry, fill: rgba(cl.c, 0.08), stroke: rgba(cl.c, 0.5), 'stroke-dasharray': '6 6' });
+                        const tx = sv(g, 'text', { x: cl.cx, y: cl.cy - cl.ry - 8, fill: cl.c, 'font-size': 16, 'text-anchor': 'middle', 'font-weight': 700 });
+                        tx.textContent = cl.name;
+                        s.hulls.push(g);
+                    }
+                    cl.pts.forEach(([w, x, y], pi) => {
+                        const g = sv(svg, 'g', { style: `transform-origin:${x}px ${y}px` });
+                        sv(g, 'circle', { cx: x, cy: y, r: 7, fill: cl.c });
+                        const tx = sv(g, 'text', { x: x + 12, y: y + 7, fill: '#e6ecff', 'font-size': 22, 'font-weight': 700 });
+                        tx.textContent = w;
+                        s.pts.push({ g, at: 6.2 + ci * 0.7 + pi * 0.2 });
+                    });
+                });
+                const arrow = d => sv(svg, 'path', { d, fill: 'none', stroke: '#fbbf24', 'stroke-width': 3, pathLength: 1, 'stroke-dasharray': '1 1' });
+                s.v1 = arrow('M214 410L284 312');
+                s.v2 = arrow('M474 410L544 312');
+                s.v3 = sv(svg, 'path', { d: 'M232 420L452 420', fill: 'none', stroke: '#a78bfa', 'stroke-width': 2, 'stroke-dasharray': '6 6' });
+                s.formula = el(s.plot, 'div', 'abs', '国王 − 男人 + 女人 ≈ <b class="hl">女王</b>', 'right:24px;bottom:18px;font-size:24px;font-weight:700');
+                return s;
+            },
+            update(s, t) {
+                show(s.hd, P(t, 0, 0.6));
+                pop(s.tok, P(t, 0.6, 1.4));
+                show(s.tid, P(t, 1.2, 1.8), 6);
+                s.vrows.forEach((r, i) => {
+                    const k = P(t, 2 + i * 0.22, 2.7 + i * 0.22);
+                    r.row.style.opacity = k;
+                    r.b.style.width = Math.abs(r.v) * 110 * k + 'px';
+                    r.b.style.background = r.v > 0 ? '#60a5fa' : '#f472b6';
+                });
+                show(s.dim, P(t, 4.2, 4.8), 6);
+                show(s.plot, P(t, 5.6, 6.2));
+                s.pts.forEach(p => { const k = P(t, p.at, p.at + 0.5); p.g.style.opacity = k; p.g.style.transform = `scale(${lerp(0.3, 1, k)})`; });
+                s.hulls.forEach((h, i) => { h.style.opacity = P(t, 9.6 + i * 0.5, 10.3 + i * 0.5); });
+                draw(s.v1, P(t, 14.8, 15.8), null);
+                draw(s.v2, P(t, 15.8, 16.8), null);
+                s.v1.setAttribute('marker-end', t > 15.7 ? 'url(#ahe)' : '');
+                s.v2.setAttribute('marker-end', t > 16.7 ? 'url(#ahe)' : '');
+                s.v3.style.opacity = P(t, 14.6, 15.2) * 0.8;
+                show(s.formula, P(t, 16.8, 17.5));
+            },
+        },
+        {
+            title: '注意力机制',
+            dur: 23,
+            cues: [
+                [0.5, 'Transformer 最关键的发明，是「注意力机制」。'],
+                [4, '看这句话：「她」指的是谁？'],
+                [7, '模型会计算「她」与句中每个词的相关度，「小红」得分最高。'],
+                [12.2, '具体做法：每个词生成查询 Q、键 K、值 V 三个向量。'],
+                [16.2, 'Q 和 K 越匹配，就从对应的 V 吸收越多信息。'],
+                [19.2, '这样，每个词都能结合上下文，理解自己在这里的含义。'],
+            ],
+            build(r) {
+                const s = {};
+                s.hd = header(r, '04', '核心：注意力机制（Attention）');
+                const words = ['小明', '把', '苹果', '给了', '小红', '，', '因为', '她', '饿', '了'];
+                const wts = [0.16, 0.01, 0.07, 0.03, 0.58, 0.01, 0.04, 0.06, 0.03, 0.01];
+                s.row = el(r, 'div', 'abs flow', '', 'left:0;right:0;top:330px;gap:12px');
+                s.chips = words.map((w, i) => {
+                    const tk = el(s.row, 'div', 'tk');
+                    const c = el(tk, 'div', 'chip', w);
+                    const p = el(tk, 'div', 'tid', Math.round(wts[i] * 100) + '%');
+                    return { c, p, w: wts[i] };
+                });
+                s.svg = svgRoot(r);
+                const src = centerOf(s.chips[7].c, r);
+                s.arcs = s.chips.map((ch, i) => {
+                    if (i === 7) return null;
+                    const d = centerOf(ch.c, r);
+                    const y = src.y - src.h / 2 - 4;
+                    const h = Math.min(40 + Math.abs(d.x - src.x) * 0.32, 190);
+                    const col = i === 4 ? '#34d399' : '#f472b6';
+                    return line(s.svg, `M${src.x} ${y}Q${(src.x + d.x) / 2} ${y - h} ${d.x} ${y}`, col, 2 + ch.w * 14, { 'stroke-opacity': 0.25 + ch.w * 0.75 });
+                });
+                s.q = el(r, 'div', 'abs center', '', `left:${src.x - 150}px;width:300px;top:${src.y + 72}px;font-size:24px;font-weight:700;color:#f472b6`);
+                s.cards = [
+                    ['Q', 'Query 查询', '「我在找什么？」', '#f472b6'],
+                    ['K', 'Key 键', '「我是什么？」', '#60a5fa'],
+                    ['V', 'Value 值', '「我能提供什么信息」', '#34d399'],
+                ].map(([b, h, p, c], i) => el(r, 'div', 'card', `<span class="badge" style="background:${rgba(c, 0.18)};color:${c}">${b}</span><h3>${h}</h3><p>${p}</p>`, `left:${130 + i * 350}px;top:450px;width:320px;height:170px`));
+                return s;
+            },
+            update(s, t) {
+                show(s.hd, P(t, 0, 0.6));
+                show(s.row, P(t, 0.6, 1.4));
+                const focus = t > 4;
+                s.chips.forEach((ch, i) => {
+                    const isShe = i === 7, isRed = i === 4;
+                    ch.c.style.borderColor = isShe && focus ? '#f472b6' : isRed && t > 9.5 ? '#34d399' : '';
+                    ch.c.style.background = isShe && focus ? 'rgba(244,114,182,.2)' : isRed && t > 9.5 ? 'rgba(52,211,153,.2)' : '';
+                    ch.c.style.boxShadow = isShe && focus ? '0 0 30px rgba(244,114,182,.5)' : '';
+                    ch.p.style.opacity = isShe ? 0 : P(t, 7.4, 8.4) * (0.35 + ch.w * 1.5) * (1 - P(t, 11.8, 12.3));
+                });
+                s.arcs.forEach((a, i) => { if (a) draw(a, P(t, 7 + i * 0.08, 8.4 + i * 0.08)); });
+                s.svg.style.opacity = 1 - 0.6 * P(t, 12, 13);
+                s.q.innerHTML = t > 9.5 ? '「她」= <span style="color:#34d399">小红</span> ✓' : '「她」指的是谁？';
+                show(s.q, P(t, 4, 4.6) * (1 - P(t, 11.8, 12.3)), 10);
+                s.cards.forEach((c, i) => show(c, P(t, 12.4 + i * 0.6, 13.1 + i * 0.6)));
+                const glow = t > 16.2 && t < 19 ? 0.5 + 0.5 * Math.sin((t - 16.2) * 5) : 0;
+                s.cards.forEach(c => { c.style.boxShadow = `0 0 ${glow * 40}px rgba(167,139,250,${glow * 0.5})`; });
+            },
+        },
+        {
+            title: 'Transformer 堆叠',
+            dur: 19,
+            cues: [
+                [0.5, '注意力层加上前馈网络，组成一个 Transformer 块。'],
+                [5, '大模型把几十甚至上百个这样的块堆叠在一起。'],
+                [9, '信息逐层向上流动：低层捕捉语法，高层理解语义和逻辑。'],
+                [14, '这些层里有数十亿到上万亿个参数，模型学到的知识就藏在其中。'],
+            ],
+            build(r) {
+                const s = {};
+                s.hd = header(r, '05', '层层堆叠：Transformer');
+                s.inp = el(r, 'div', 'abs flow', '<span class="chip">今天</span><span class="chip">天气</span><span class="chip">真</span>', 'left:150px;width:480px;top:568px');
+                const layers = [['第 1 层', 480], ['第 2 层', 404], ['第 3 层', 328], ['第 96 层', 196]];
+                s.layers = layers.map(([n, y]) => {
+                    const L = el(r, 'div', 'layer', `<span class="ln">${n}</span><span class="sb" style="background:rgba(244,114,182,.18);color:#f9a8d4">多头注意力</span><span class="sb" style="background:rgba(96,165,250,.18);color:#93c5fd">前馈网络</span>`, `left:150px;top:${y}px;width:480px;height:62px`);
+                    return { L, y: y + 31 };
+                });
+                s.dots = el(r, 'div', 'abs center', '⋮', 'left:150px;width:480px;top:262px;font-size:36px;line-height:1;color:#94a3b8');
+                s.out = el(r, 'div', 'abs flow', '<span style="font-size:22px;color:#94a3b8">输出 →</span><span class="chip" style="border-color:#fbbf24;background:rgba(251,191,36,.18);color:#fde68a">好</span>', 'left:150px;width:480px;top:112px');
+                s.pulse = el(r, 'div', 'abs', '', 'left:140px;width:500px;height:10px;border-radius:10px;background:radial-gradient(closest-side,rgba(251,191,36,.95),rgba(251,191,36,0));filter:blur(2px)');
+                s.facts = [
+                    ['#f472b6', '每一块 = <b>注意力</b> + <b>前馈网络</b><br><span style="color:#94a3b8;font-size:20px">（再加上残差连接、归一化等细节）</span>', 1.5],
+                    ['#60a5fa', '堆叠几十到上百层', 5.2],
+                    ['#34d399', '低层：词形、语法<br>高层：语义、逻辑、推理', 9.2],
+                    ['#fbbf24', '参数量：数十亿 ~ 上万亿<br><span class="hl">知识就储存在这些参数里</span>', 14.2],
+                ].map(([c, h, at]) => ({ e: el(null, 'div', 'fact', `<i style="background:${c}"></i><div>${h}</div>`), at }));
+                const box = el(r, 'div', 'abs', '', 'left:720px;top:170px;width:500px');
+                s.facts.forEach(f => box.appendChild(f.e));
+                return s;
+            },
+            update(s, t) {
+                show(s.hd, P(t, 0, 0.6));
+                show(s.inp, P(t, 0.5, 1.1));
+                s.layers.forEach((l, i) => show(l.L, P(t, i === 0 ? 1 : 4.6 + i * 0.4, (i === 0 ? 1.7 : 5.2 + i * 0.4)), 30));
+                show(s.dots, P(t, 5.8, 6.4));
+                // pulse travels bottom → top repeatedly
+                let py = -1;
+                if (t > 6.5 && t < 17.5) {
+                    const f = ((t - 6.5) % 3.2) / 3.2;
+                    py = lerp(590, 130, ease(f));
+                }
+                s.pulse.style.opacity = py < 0 ? 0 : 1;
+                s.pulse.style.top = py + 'px';
+                s.layers.forEach(l => {
+                    const k = py < 0 ? 0 : clamp(1 - Math.abs(py - l.y) / 60);
+                    l.L.style.boxShadow = `0 0 ${k * 36}px rgba(251,191,36,${k * 0.6})`;
+                    l.L.style.borderColor = k > 0.2 ? `rgba(251,191,36,${0.3 + k * 0.6})` : '';
+                });
+                show(s.out, P(t, 8.4, 9));
+                s.facts.forEach(f => show(f.e, P(t, f.at, f.at + 0.7)));
+            },
+        },
+        {
+            title: '采样与温度',
+            dur: 19,
+            cues: [
+                [0.5, '得到概率分布后，怎么挑出下一个词？答案是「采样」。'],
+                [5.2, '温度调低，分布变尖锐，模型几乎总选最可能的词，稳定但保守。'],
+                [11.4, '温度调高，分布变平坦，冷门词也有机会，更有创意，也更容易跑偏。'],
+            ],
+            build(r) {
+                const s = {};
+                s.hd = header(r, '06', '采样：温度（Temperature）');
+                s.ctx = el(r, 'div', 'abs', '今天天气真 <span class="hl">___</span>', 'left:130px;top:132px;font-size:30px;font-weight:700');
+                s.logits = [['好', 3.0], ['不错', 2.1], ['晴朗', 1.3], ['热', 1.0], ['冷', 0.6], ['蓝', -0.4]];
+                s.bars = el(r, 'div', 'abs', '', 'left:130px;top:190px');
+                s.rows = s.logits.map(([w]) => {
+                    const row = el(s.bars, 'div', 'barrow', `<span class="w">${w}</span><span class="track" style="width:600px"><span class="fill"></span></span><span class="pct"></span>`, 'height:48px');
+                    return { fill: row.querySelector('.fill'), pct: row.querySelector('.pct') };
+                });
+                s.tv = el(r, 'div', 'abs', '', 'left:960px;top:200px;font-size:30px;font-weight:800;line-height:1.3');
+                s.mood = el(r, 'div', 'abs', '', 'left:960px;top:330px;width:260px;font-size:22px;color:#a5b4d8;line-height:1.5');
+                s.slider = el(r, 'div', 'slider', '<div class="knob"></div>', 'left:230px;top:512px;width:600px');
+                s.knob = s.slider.firstChild;
+                el(r, 'div', 'abs', '0.1 保守', 'left:130px;top:502px;font-size:20px;color:#7dd3fc');
+                el(r, 'div', 'abs', '2.0 发散', 'left:850px;top:502px;font-size:20px;color:#fda4af');
+                s.samp = el(r, 'div', 'abs', '', 'left:130px;top:556px;font-size:24px;color:#cbd5e1');
+                return s;
+            },
+            T(t) {
+                if (t < 5.2) return 1;
+                if (t < 7.5) return lerp(1, 0.25, P(t, 5.2, 7.5));
+                if (t < 11.4) return 0.25;
+                if (t < 13.8) return lerp(0.25, 2, P(t, 11.4, 13.8));
+                return 2;
+            },
+            update(s, t) {
+                show(s.hd, P(t, 0, 0.6));
+                show(s.ctx, P(t, 0.5, 1.1));
+                const T = this.T(t);
+                const ex = s.logits.map(([, l]) => Math.exp(l / T));
+                const sum = ex.reduce((a, b) => a + b, 0);
+                const k0 = P(t, 1.4, 2.6);
+                s.rows.forEach((r, i) => {
+                    const p = ex[i] / sum;
+                    r.fill.style.width = p * 100 * k0 + '%';
+                    r.pct.textContent = (p * 100 * k0).toFixed(0) + '%';
+                });
+                s.bars.style.opacity = P(t, 1.2, 1.8);
+                s.tv.innerHTML = `温度 T<br><span style="font-size:52px;color:${T < 0.7 ? '#7dd3fc' : T > 1.4 ? '#fda4af' : '#e6ecff'}">${T.toFixed(2)}</span>`;
+                show(s.tv, P(t, 2.6, 3.2));
+                s.mood.textContent = T < 0.7 ? '分布尖锐 → 几乎总是选「好」' : T > 1.4 ? '分布平坦 → 冷门词也常被抽中' : '按概率随机抽取下一个词';
+                show(s.mood, P(t, 3, 3.6));
+                s.slider.style.opacity = P(t, 2.6, 3.2);
+                s.knob.style.left = ((T - 0.1) / 1.9) * 100 + '%';
+                const low = t > 8 && t < 11.4, high = t > 14.5;
+                s.samp.innerHTML = low ? '抽样 5 次：<b>好 · 好 · 好 · 好 · 好</b>' : high ? '抽样 5 次：<b>不错 · 蓝 · 好 · 冷 · 晴朗</b>' : '';
+                s.samp.style.opacity = low ? P(t, 8, 8.6) : high ? P(t, 14.5, 15.1) : 0;
+            },
+        },
+        {
+            title: '自回归生成',
+            dur: 20,
+            cues: [
+                [0.5, '生成一整段回答，其实就是把这个过程不断重复。'],
+                [4.5, '每预测出一个词，就把它接到输入末尾，再预测下一个。'],
+                [10, '这叫「自回归生成」。AI 一个字一个字往外蹦，正是这个原因。'],
+                [16.2, '直到模型输出一个特殊的「结束」标记为止。'],
+            ],
+            gen: ['因为', '阳光', '里的', '蓝光', '波长', '较短', '，', '更容易', '被', '空气', '分子', '散射', '。'],
+            build(r) {
+                const s = {};
+                s.hd = header(r, '07', '一个词一个词：自回归生成');
+                s.text = el(r, 'div', 'panel abs', '<div style="color:#94a3b8">用户：天空为什么是蓝色的？</div><div style="margin-top:12px"><span style="color:#a78bfa;font-weight:800">AI：</span><span class="out"></span><span class="caret" style="height:32px"></span></div>', 'left:120px;top:122px;width:1040px;height:170px;padding:26px 32px;font-size:30px;line-height:1.5');
+                s.out = s.text.querySelector('.out');
+                s.caret = s.text.querySelector('.caret');
+                s.ctxBox = el(r, 'div', 'panel abs center', '<div class="lbl">上下文</div><div style="font-size:26px;font-weight:800;margin-top:8px">问题 + 已生成内容</div>', 'left:120px;top:350px;width:310px;height:110px;padding:18px');
+                s.llm = el(r, 'div', 'llm abs', 'LLM', 'left:540px;top:345px;width:200px;height:120px');
+                s.nxt = el(r, 'div', 'panel abs center', '<div class="lbl">下一个 Token</div><div class="tokv" style="font-size:36px;font-weight:800;margin-top:6px;color:#fde68a"></div>', 'left:850px;top:350px;width:310px;height:110px;padding:16px');
+                s.tokv = s.nxt.querySelector('.tokv');
+                s.svg = svgRoot(r);
+                s.a1 = line(s.svg, 'M436 405L532 405', '#60a5fa', 3);
+                s.a2 = line(s.svg, 'M746 405L842 405', '#60a5fa', 3);
+                s.loop = sv(s.svg, 'path', { d: 'M1005 466C1005 560 275 560 275 470', fill: 'none', stroke: '#fbbf24', 'stroke-width': 3, 'stroke-dasharray': '10 10', 'marker-end': 'url(#aha)' });
+                s.loopLbl = el(r, 'div', 'abs center', '把新词接回输入，继续预测', 'left:440px;width:400px;top:548px;font-size:21px;color:#fde68a');
+                s.step = el(r, 'div', 'abs', '', 'right:64px;top:50px;font:700 22px/1 ui-monospace,Menlo,monospace;color:#94a3b8');
+                return s;
+            },
+            update(s, t) {
+                show(s.hd, P(t, 0, 0.6));
+                show(s.text, P(t, 0.4, 1));
+                const k = P(t, 1.2, 2.4);
+                [s.ctxBox, s.nxt].forEach(e => show(e, k));
+                pop(s.llm, k);
+                draw(s.a1, P(t, 2, 2.6), 'ah');
+                draw(s.a2, P(t, 2.4, 3), 'ah');
+                s.loop.style.opacity = P(t, 3, 3.6);
+                s.loop.style.strokeDashoffset = -t * 30;
+                show(s.loopLbl, P(t, 3.4, 4));
+                const n = t < 4 ? 0 : Math.min(this.gen.length, Math.floor(t - 4) + 1);
+                const f = t < 4 ? 1 : (t - 4) % 1;
+                const done = t > 17.3;
+                s.out.innerHTML = this.gen.slice(0, n).map((w, i) => `<span class="gtok${i === n - 1 && !done && f < 0.7 ? ' new' : ''}">${w}</span>`).join('') + (done ? '<span class="eos">&lt;结束&gt;</span>' : '');
+                s.caret.style.display = done ? 'none' : '';
+                s.caret.style.opacity = Math.floor(t * 2.2) % 2 ? 0.2 : 1;
+                s.tokv.textContent = done ? '<结束>' : n ? this.gen[n - 1] : '…';
+                s.tokv.style.transform = `scale(${n && !done ? lerp(1.3, 1, clamp(f * 4)) : 1})`;
+                const g = n && !done ? 1 - clamp(f * 2) : 0;
+                s.llm.style.boxShadow = `0 0 ${20 + g * 50}px rgba(139,92,246,${0.3 + g * 0.5})`;
+                s.step.textContent = n ? `第 ${Math.min(n + (done ? 1 : 0), 14)} 步` : '';
+            },
+        },
+        {
+            title: '训练',
+            dur: 26,
+            cues: [
+                [0.5, '那模型的参数是怎么学来的？靠海量文本上的「猜词练习」。'],
+                [5.2, '遮住下一个词让模型猜，猜错了就算出误差，通过反向传播微调参数。'],
+                [10.4, '重复数万亿次，误差逐渐降低，语言规律和知识就被压缩进参数里。'],
+                [15, '训练通常分三步：先在海量文本上预训练，再用指令微调学会回答问题，'],
+                [21, '最后用人类反馈强化学习，让回答更有用、更安全。'],
+            ],
+            build(r) {
+                const s = {};
+                s.hd = header(r, '08', '模型是怎么学会的：训练');
+                s.A = el(r, 'div', 'abs', '', 'left:0;top:0;width:1280px;height:720px');
+                s.poem = el(s.A, 'div', 'panel abs', '<div class="lbl">训练样本</div><div style="font-size:36px;font-weight:800;margin-top:12px">床前明月光，<br>疑是地上<span class="blank" style="display:inline-block;min-width:52px;border-bottom:3px solid #fbbf24;text-align:center;color:#fbbf24">？</span></div>', 'left:80px;top:140px;width:520px;height:190px;padding:24px 30px');
+                s.blank = s.poem.querySelector('.blank');
+                s.guess = el(s.A, 'div', 'abs', '', 'left:80px;top:352px;width:520px;font-size:28px;font-weight:700');
+                s.cycle = el(s.A, 'div', 'abs flow', '<span class="chip" style="font-size:22px">计算误差</span><span class="ar">→</span><span class="chip" style="font-size:22px">反向传播</span><span class="ar">→</span><span class="chip" style="font-size:22px">更新参数</span>', 'left:80px;width:520px;top:430px;justify-content:flex-start');
+                s.cyc = [...s.cycle.children];
+                s.after = el(s.A, 'div', 'abs', '训练数万亿个 Token 之后：<b style="color:#34d399">霜 ✓</b>', 'left:80px;top:530px;font-size:26px');
+                const plot = el(s.A, 'div', 'panel abs', '<div class="lbl" style="position:absolute;left:24px;top:18px">误差（Loss）</div><div class="lbl" style="position:absolute;right:24px;bottom:14px">训练步数 →</div>', 'left:660px;top:140px;width:540px;height:440px');
+                s.plot = plot;
+                const svg = sv(plot, 'svg', { width: 540, height: 440, viewBox: '0 0 540 440', style: 'position:absolute;left:0;top:0' });
+                sv(svg, 'path', { d: 'M50 60V390H510', fill: 'none', stroke: 'rgba(148,163,255,.4)', 'stroke-width': 2 });
+                let d = '';
+                for (let i = 0; i <= 120; i++) {
+                    const x = i / 120;
+                    const y = 0.86 * Math.exp(-x * 4) + 0.1 + 0.035 * Math.sin(i * 1.7) * (1 - x * 0.7) + 0.02 * Math.sin(i * 0.53);
+                    d += (i ? 'L' : 'M') + (50 + x * 450).toFixed(1) + ' ' + (390 - y * 320).toFixed(1);
+                }
+                s.curve = line(svg, d, '#60a5fa', 3);
+
+                s.B = el(r, 'div', 'abs', '', 'left:0;top:0;width:1280px;height:720px');
+                s.cards = [
+                    ['①', '#60a5fa', '预训练', '数万亿 Token 的网页、书籍、代码', '学会语言规律与世界知识'],
+                    ['②', '#a78bfa', '指令微调 SFT', '人工编写的高质量问答示范', '学会听懂指令、按格式回答'],
+                    ['③', '#34d399', '人类反馈强化学习 RLHF', '人类对多个回答打分、排序', '更有用、更诚实、更安全'],
+                ].map(([n, c, h, d1, d2], i) => el(s.B, 'div', 'card', `<span class="badge" style="background:${rgba(c, 0.18)};color:${c}">${n}</span><h3>${h}</h3><p>${d1}</p><p style="margin-top:14px;color:${c};font-weight:700">→ ${d2}</p>`, `left:${64 + i * 392}px;top:180px;width:360px;height:240px`));
+                s.arrs = [0, 1].map(i => el(s.B, 'div', 'arrow', '', `left:${428 + i * 392}px;top:298px;width:24px`));
+                s.chat = el(s.B, 'div', 'note', '', 'top:480px');
+                return s;
+            },
+            update(s, t) {
+                show(s.hd, P(t, 0, 0.6));
+                s.A.style.opacity = 1 - P(t, 13.6, 14.4);
+                show(s.poem, P(t, 0.6, 1.3));
+                const wrong = t > 2.6 && t < 12, right = t >= 12;
+                s.blank.textContent = right ? '霜' : wrong ? '雪' : '？';
+                s.blank.style.color = right ? '#34d399' : wrong ? '#f87171' : '#fbbf24';
+                s.guess.innerHTML = '模型猜：<span style="color:#f87171">雪 ✗</span>　正确答案：<span style="color:#34d399">霜</span>';
+                show(s.guess, P(t, 3.4, 4));
+                show(s.cycle, P(t, 5.2, 5.6));
+                s.cyc.forEach((c, i) => {
+                    if (!c.classList.contains('chip')) return;
+                    const j = i / 2, on = t > 5.6 && Math.floor((t - 5.6) * 1.6) % 3 === j && t < 12;
+                    c.style.borderColor = on ? '#fbbf24' : '';
+                    c.style.background = on ? 'rgba(251,191,36,.2)' : '';
+                });
+                show(s.after, P(t, 12, 12.6));
+                show(s.plot, P(t, 5.6, 6.2));
+                draw(s.curve, P(t, 6.2, 12.5));
+                s.B.style.opacity = P(t, 14.2, 14.8);
+                s.cards.forEach((c, i) => show(c, P(t, [15, 18, 21][i], [15.7, 18.7, 21.7][i]), 30));
+                s.arrs.forEach((a, i) => { a.style.opacity = P(t, [17.6, 20.6][i], [18.2, 21.2][i]); });
+                s.chat.innerHTML = '于是，一个「文字接龙」模型，变成了能对话的 <b class="hl">AI 助手</b>';
+                show(s.chat, P(t, 23.4, 24.2));
+            },
+        },
+        {
+            title: '总结',
+            dur: 22,
+            cues: [
+                [0.5, '回顾一下：文字先被分词，再变成向量；'],
+                [4.2, '经过层层注意力计算，得出下一个词的概率，采样后接回输入，循环往复。'],
+                [10, '记住：LLM 不是在查数据库，而是在生成「最合理的续写」，所以它也会一本正经地胡说八道。'],
+                [18.2, '感谢观看！'],
+            ],
+            build(r) {
+                const s = {};
+                s.hd = header(r, '09', '总结');
+                s.flow = el(r, 'div', 'abs flow', '', 'left:0;right:0;top:170px');
+                const steps = ['文字', '分词', '向量', 'Transformer × N', '概率', '采样', '新词'];
+                s.items = [];
+                steps.forEach((w, i) => {
+                    if (i) s.items.push(el(s.flow, 'span', 'ar', '→'));
+                    const c = el(s.flow, 'span', 'chip', w);
+                    c.style.borderColor = rgba(COL[i % COL.length], 0.7);
+                    c.style.background = rgba(COL[i % COL.length], 0.14);
+                    s.items.push(c);
+                });
+                s.svg = svgRoot(r);
+                const a = centerOf(s.items[s.items.length - 1], r), b = centerOf(s.items[0], r);
+                const y = a.y + a.h / 2 + 6;
+                s.loop = line(s.svg, `M${a.x} ${y}C${a.x} ${y + 70} ${b.x} ${y + 70} ${b.x} ${y + 4}`, '#fbbf24', 3, { 'stroke-dasharray': '1 1' });
+                s.loopLbl = el(r, 'div', 'abs center', '循环，直到输出 &lt;结束&gt;', `left:0;right:0;top:${y + 64}px;font-size:20px;color:#fde68a`);
+                s.warn = el(r, 'div', 'card', '<h3 style="color:#fbbf24">⚠ 重要提醒</h3><p style="font-size:24px;color:#cbd5e1">LLM 并不「查找」答案，而是根据学到的统计规律<b style="color:#fff">生成最合理的续写</b>。<br>所以它可能自信地说出错误内容 —— 这就是所谓的<b style="color:#f87171">「幻觉」</b>。</p>', 'left:170px;top:370px;width:940px');
+                s.end = el(r, 'div', 'abs center', '<div class="title" style="font-size:84px">感谢观看</div><div class="tagline" style="margin-top:14px;color:#94a3b8">me.ysyms.host</div>', 'left:0;right:0;top:230px');
+                return s;
+            },
+            update(s, t) {
+                const fadeOut = 1 - P(t, 17.4, 18.2);
+                show(s.hd, P(t, 0, 0.6) * fadeOut);
+                s.items.forEach((e, i) => pop(e, P(t, 0.6 + i * 0.42, 1.2 + i * 0.42)));
+                s.flow.style.opacity = fadeOut;
+                draw(s.loop, P(t, 6.8, 8), 'aha');
+                s.svg.style.opacity = fadeOut;
+                show(s.loopLbl, P(t, 7.6, 8.2) * fadeOut);
+                show(s.warn, P(t, 10, 10.8) * fadeOut, 30);
+                show(s.end, P(t, 18.2, 19.2), 30);
+            },
+        },
+    ];
+
+    // ---------- engine ----------
+    const stage = document.getElementById('stage');
+    const viewport = document.getElementById('viewport');
+    const sub = document.getElementById('sub');
+    const overlay = document.getElementById('overlay');
+    const playBtn = document.getElementById('playBtn');
+    const timeEl = document.getElementById('time');
+    const bar = document.getElementById('bar');
+    const barFill = document.getElementById('barFill');
+    const barKnob = document.getElementById('barKnob');
+    const barTip = document.getElementById('barTip');
+    const narrBtn = document.getElementById('narrBtn');
+    const ccBtn = document.getElementById('ccBtn');
+    const fsBtn = document.getElementById('fsBtn');
+    const chaptersEl = document.getElementById('chapters');
+
+    const starts = [];
+    let total = 0;
+    scenes.forEach(s => { starts.push(total); total += s.dur; });
+
+    let T = 0, playing = false, lastTs = null, cur = -1, root = null, state = null, cueKey = null, ended = false;
+    let narrate = false, captions = true;
+
+    const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+    const ICON_PLAY = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 8 5.5z"/></svg>';
+    const ICON_PAUSE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+    const ICON_REPLAY = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>';
+    const bigplay = document.getElementById('bigplay');
+    const BIG_PLAY = bigplay.innerHTML;
+
+    // chapter ticks + list
+    scenes.forEach((s, i) => {
+        if (i) {
+            const tick = el(bar, 'div', 'bar-tick');
+            tick.style.left = (starts[i] / total * 100) + '%';
+        }
+        const b = el(chaptersEl, 'button', 'chap', `<b>${String(i).padStart(2, '0')}</b>${s.title}`);
+        b.onclick = () => { seek(starts[i] + 0.01); if (!playing) play(); };
+    });
+
+    // speech
+    let voice = null;
+    const hasTTS = 'speechSynthesis' in window;
+    function pickVoice() {
+        if (!hasTTS) return;
+        const vs = speechSynthesis.getVoices();
+        voice = vs.find(v => /zh[-_]CN/i.test(v.lang)) || vs.find(v => /^zh/i.test(v.lang)) || null;
+    }
+    if (hasTTS) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+    // while a narration line is still being spoken, the clock holds before the next cue,
+    // so the picture never runs ahead of the voice
+    let speaking = false, speechId = 0, speechDeadline = 0;
+    function speak(text) {
+        if (!hasTTS) return;
+        speechSynthesis.cancel();
+        const id = ++speechId;
+        speaking = true;
+        speechDeadline = performance.now() + (text.length * 0.35 + 2) * 1000;
+        const u = new SpeechSynthesisUtterance(text.replace(/[「」]/g, ''));
+        u.lang = 'zh-CN';
+        if (voice) u.voice = voice;
+        u.rate = 1.12;
+        u.onend = u.onerror = () => { if (id === speechId) speaking = false; };
+        speechSynthesis.speak(u);
+    }
+    function hush() { speechId++; speaking = false; if (hasTTS) speechSynthesis.cancel(); }
+    function nextBoundary(t) {
+        const i = sceneIndex(t), sc = scenes[i], lt = t - starts[i];
+        for (const [at] of sc.cues) if (at > lt) return starts[i] + at;
+        return lt < sc.dur - 0.6 ? starts[i] + sc.dur - 0.6 : Infinity;
+    }
+
+    function fit() {
+        const w = viewport.clientWidth, h = viewport.clientHeight;
+        const k = Math.min(w / 1280, h / 720);
+        stage.style.transform = `translate(${(w - 1280 * k) / 2}px,${(h - 720 * k) / 2}px) scale(${k})`;
+    }
+    new ResizeObserver(fit).observe(viewport);
+    fit();
+
+    function sceneIndex(t) {
+        for (let i = scenes.length - 1; i >= 0; i--) if (t >= starts[i]) return i;
+        return 0;
+    }
+
+    function render() {
+        const t = Math.min(T, total - 1e-3);
+        const i = sceneIndex(t);
+        const sc = scenes[i];
+        if (i !== cur) {
+            if (root) root.remove();
+            root = el(null, 'div', 'scene');
+            stage.insertBefore(root, sub);
+            state = sc.build(root) || {};
+            cur = i;
+            [...chaptersEl.children].forEach((c, j) => c.classList.toggle('active', j === i));
+        }
+        const lt = t - starts[i];
+        sc.update(state, lt);
+        root.style.opacity = Math.min(P(lt, 0, 0.5), 1 - P(lt, sc.dur - 0.5, sc.dur));
+
+        // subtitles / narration
+        let ci = -1;
+        for (let j = 0; j < sc.cues.length; j++) if (lt >= sc.cues[j][0]) ci = j;
+        const key = ci < 0 ? null : i + ':' + ci;
+        if (key !== cueKey) {
+            cueKey = key;
+            sub.textContent = ci < 0 ? '' : sc.cues[ci][1];
+            if (key && playing && narrate && lt - sc.cues[ci][0] < 1) speak(sc.cues[ci][1]);
+        }
+        const hideAt = sc.dur - 0.35;
+        sub.classList.toggle('off', !captions || lt > hideAt);
+
+        const pct = T / total * 100;
+        barFill.style.width = pct + '%';
+        barKnob.style.left = pct + '%';
+        timeEl.textContent = `${fmt(T)} / ${fmt(total)}`;
+    }
+
+    function loop(ts) {
+        if (playing) {
+            if (lastTs != null) {
+                let nt = T + Math.min(0.1, (ts - lastTs) / 1000);
+                if (narrate && speaking && ts < speechDeadline) nt = Math.min(nt, Math.max(T, nextBoundary(T) - 1e-3));
+                T = nt;
+            }
+            lastTs = ts;
+            if (T >= total) { T = total; pause(); ended = true; showOverlay(true); }
+            render();
+        }
+        requestAnimationFrame(loop);
+    }
+
+    function setPlayIcon() { playBtn.innerHTML = playing ? ICON_PAUSE : ICON_PLAY; }
+    function showOverlay(end) {
+        bigplay.innerHTML = end ? ICON_REPLAY : BIG_PLAY;
+        document.getElementById('hint').textContent = end ? '重新播放' : '点击播放 · 可开启语音解说';
+        overlay.classList.remove('hidden');
+    }
+    function play() {
+        if (ended || T >= total) { T = 0; ended = false; }
+        playing = true; lastTs = null; cueKey = null;
+        overlay.classList.add('hidden');
+        setPlayIcon();
+    }
+    function pause() { playing = false; hush(); setPlayIcon(); }
+    function toggle() { playing ? pause() : play(); }
+    function seek(t) {
+        T = clamp(t, 0, total); ended = false;
+        hush(); cueKey = null;
+        if (!playing && T < total) overlay.classList.add('hidden');
+        render();
+    }
+
+    viewport.addEventListener('click', toggle);
+    playBtn.onclick = toggle;
+    narrBtn.onclick = () => {
+        narrate = !narrate;
+        narrBtn.classList.toggle('on', narrate);
+        if (!narrate) hush();
+        else if (!hasTTS) alert('当前浏览器不支持语音合成。');
+        else if (playing) cueKey = null;
+    };
+    ccBtn.onclick = () => { captions = !captions; ccBtn.classList.toggle('on', captions); render(); };
+    const player = document.getElementById('player');
+    fsBtn.onclick = () => {
+        if (document.fullscreenElement) document.exitFullscreen();
+        else if (player.requestFullscreen) player.requestFullscreen();
+        else if (player.webkitRequestFullscreen) player.webkitRequestFullscreen();
+    };
+
+    // scrubbing
+    const posToTime = e => {
+        const r = bar.getBoundingClientRect();
+        return clamp((e.clientX - r.left) / r.width) * total;
+    };
+    let dragging = false;
+    bar.addEventListener('pointerdown', e => { dragging = true; bar.classList.add('drag'); bar.setPointerCapture(e.pointerId); seek(posToTime(e)); });
+    bar.addEventListener('pointermove', e => {
+        const t = posToTime(e);
+        const r = bar.getBoundingClientRect();
+        barTip.style.left = (e.clientX - r.left) + 'px';
+        barTip.textContent = `${fmt(t)} · ${scenes[sceneIndex(Math.min(t, total - 1e-3))].title}`;
+        if (dragging) seek(t);
+    });
+    const endDrag = () => { dragging = false; bar.classList.remove('drag'); };
+    bar.addEventListener('pointerup', endDrag);
+    bar.addEventListener('pointercancel', endDrag);
+
+    document.addEventListener('keydown', e => {
+        if (e.target.closest && e.target.closest('input,textarea')) return;
+        const k = e.key.toLowerCase();
+        if (k === ' ' || k === 'k') { e.preventDefault(); toggle(); }
+        else if (k === 'arrowright') { e.preventDefault(); seek(T + 5); }
+        else if (k === 'arrowleft') { e.preventDefault(); seek(T - 5); }
+        else if (k === 'f') fsBtn.onclick();
+        else if (k === 'n') narrBtn.onclick();
+        else if (k === 'c') ccBtn.onclick();
+    });
+
+    setPlayIcon();
+    render();
+    requestAnimationFrame(loop);
+    window.__llmVideo = { seek, scenes, starts, total };
+})();
+</script>
+</body>
+</html>

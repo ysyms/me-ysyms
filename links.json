@@ -23,6 +23,14 @@
   },
   "links": [
     {
+      "url": "https://me.ysyms.host/llm-video.html",
+      "description": {
+        "en": "Animated explainer: how large language models work",
+        "zh": "动画讲解：三分钟看懂大语言模型（LLM）原理"
+      },
+      "tags": ["AI", "tutorial"]
+    },
+    {
       "url": "https://me.ysyms.host/local-ai-setup.html",
       "description": {
         "en": "Local AI setup: Ollama + SillyTavern on Windows",
